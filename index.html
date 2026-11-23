@@ -14,8 +14,40 @@
   <meta name="browsermode" content="application" />
   <meta name="msapplication-TileColor" content="#0A0E17" />
   <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230A0E17'/%3E%3Crect x='24' y='24' width='132' height='132' rx='28' fill='none' stroke='%23E5C17B' stroke-opacity='0.45' stroke-width='2'/%3E%3Ctext x='90' y='108' text-anchor='middle' fill='%23E5C17B' font-family='Poppins,sans-serif' font-size='54' font-weight='700'%3EPFL%3C/text%3E%3C/svg%3E" />
-  <link rel="manifest" id="pwaManifestLink" href='data:application/manifest+json;charset=utf-8,{"name":"Personal Finance Leadger","short_name":"Finance Leadger","id":"/","start_url":"./","scope":"./","display":"standalone","display_override":["fullscreen","standalone"],"orientation":"portrait","background_color":"#0A0E17","theme_color":"#0A0E17","icons":[{"src":"data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 180 180%27%3E%3Crect width=%27180%27 height=%27180%27 rx=%2740%27 fill=%27%230A0E17%27/%3E%3Crect x=%2724%27 y=%2724%27 width=%27132%27 height=%27132%27 rx=%2728%27 fill=%27none%27 stroke=%27%23E5C17B%27 stroke-opacity=%270.45%27 stroke-width=%272%27/%3E%3Ctext x=%2790%27 y=%27108%27 text-anchor='middle' fill='%27%23E5C17B%27 font-family='Poppins,sans-serif' font-size='54' font-weight='700'%3EPFL%3C/text%3E%3C/svg%3E","sizes":"180x180","type":"image/svg+xml","purpose":"any maskable"}]}' />
+  <link rel="manifest" id="pwaManifestLink" />
   <title>Aurelia Wealth — Personal Finance & Wealth Dashboard</title>
+
+  <script>
+    // Generate dynamic Web App Manifest with real origin URL so iOS/Android Home Screen launches in true standalone fullscreen without address bar
+    (function setupDynamicWebManifest() {
+      try {
+        const currentUrl = window.location.href.split('#')[0];
+        const scopeUrl = new URL('./', currentUrl).href;
+        const iconSvg =
+          "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230A0E17'/%3E%3Crect x='24' y='24' width='132' height='132' rx='28' fill='none' stroke='%23E5C17B' stroke-opacity='0.45' stroke-width='2'/%3E%3Ctext x='90' y='108' text-anchor='middle' fill='%23E5C17B' font-family='Poppins,sans-serif' font-size='54' font-weight='700'%3EPFL%3C/text%3E%3C/svg%3E";
+        const manifestObj = {
+          name: 'Personal Finance Leadger',
+          short_name: 'Finance Leadger',
+          start_url: currentUrl,
+          scope: scopeUrl,
+          display: 'standalone',
+          display_override: ['standalone', 'fullscreen'],
+          orientation: 'portrait',
+          background_color: '#0A0E17',
+          theme_color: '#0A0E17',
+          icons: [
+            { src: iconSvg, sizes: '180x180', type: 'image/svg+xml', purpose: 'any' },
+            { src: iconSvg, sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
+          ],
+        };
+        const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+        const linkEl = document.getElementById('pwaManifestLink');
+        if (linkEl) linkEl.href = URL.createObjectURL(blob);
+      } catch (err) {
+        console.warn('Manifest init skipped:', err);
+      }
+    })();
+  </script>
 
   <!-- Google Font: Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -189,11 +221,31 @@
       -ms-touch-action: none;
     }
 
-    /* Native App Shell Layout (Locked Viewport, Internal App Scroll) */
+    html {
+      height: 100%;
+      background-color: #060911;
+    }
+
+    body {
+      background-color: #060911;
+      color: #F3F4F6;
+      overflow-x: hidden;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    /* Native App Shell Layout */
     .smartphone-frame {
       width: 100%;
       max-width: 430px;
       margin: 0 auto;
+      min-height: 100dvh;
       height: 100dvh;
       max-height: 100dvh;
       overflow: hidden;
@@ -209,20 +261,59 @@
       --safe-area-bottom: 12px;
     }
 
+    /* In normal mobile browser tab (non-standalone), allow document scroll so Safari automatically collapses address bar & toolbar */
+    html:not(.is-standalone-app),
+    html:not(.is-standalone-app) body {
+      height: auto;
+      min-height: calc(100vh + 2px);
+      overflow-y: auto;
+    }
+
+    html:not(.is-standalone-app) .smartphone-frame {
+      height: auto;
+      min-height: calc(100vh + 2px);
+      max-height: none;
+      overflow: visible;
+    }
+
+    html:not(.is-standalone-app) .app-scroll-area {
+      overflow: visible;
+    }
+
+    html:not(.is-standalone-app) nav[aria-label="Navigasi Utama"] {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 430px;
+    }
+
     @media (min-width: 640px) {
       body {
         padding: 12px 0;
         background-image: radial-gradient(circle at 50% 0%, rgba(229, 193, 123, 0.08), transparent 60%);
       }
 
-      .smartphone-frame {
+      .smartphone-frame,
+      html:not(.is-standalone-app) .smartphone-frame {
         height: calc(100dvh - 24px);
+        min-height: 0;
         max-height: 860px;
+        overflow: hidden;
         border-radius: 36px;
         border: 1px solid rgba(229, 193, 123, 0.22);
         box-shadow:
           0 30px 80px -20px rgba(0, 0, 0, 0.95),
           0 0 40px -15px rgba(229, 193, 123, 0.16);
+      }
+
+      html:not(.is-standalone-app) .app-scroll-area {
+        overflow-y: auto;
+      }
+
+      html:not(.is-standalone-app) nav[aria-label="Navigasi Utama"] {
+        position: absolute;
+        left: 0;
+        transform: none;
       }
     }
 
@@ -1563,8 +1654,10 @@
       });
 
       const scrollContainer = document.getElementById('appMainScroll');
-      if (scrollContainer) {
+      if (scrollContainer && document.documentElement.classList.contains('is-standalone-app')) {
         scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 1, behavior: 'smooth' });
       }
       renderDashboardAll();
     }
@@ -2397,8 +2490,16 @@
     // =====================================================================
     // BOOTSTRAP
     // =====================================================================
+    function detectStandaloneMode() {
+      const isStandalone =
+        window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches;
+      document.documentElement.classList.toggle('is-standalone-app', isStandalone);
+      return isStandalone;
+    }
+
     function initIosStandalonePrompt() {
-      // Banner disembunyikan secara default; gunakan mode Layar Utama untuk tanpa bar Safari
       const banner = document.getElementById('iosStandaloneBanner');
       if (banner) {
         banner.classList.add('hidden');
@@ -2411,16 +2512,18 @@
     }
 
     function nudgeSafariToolbarCollapse() {
-      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-      if (isStandalone) return;
-      setTimeout(() => {
+      if (detectStandaloneMode()) return;
+      const collapse = () => {
         if (window.scrollY < 2) {
-          window.scrollTo({ top: 1, behavior: 'instant' });
+          window.scrollTo(0, 1);
         }
-      }, 180);
+      };
+      setTimeout(collapse, 120);
+      setTimeout(collapse, 450);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      detectStandaloneMode();
       renderDashboardAll();
       initIosStandalonePrompt();
       nudgeSafariToolbarCollapse();
