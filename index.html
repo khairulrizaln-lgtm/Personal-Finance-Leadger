@@ -997,8 +997,46 @@
               </button>
             </div>
 
-            <!-- Filter Mutasi -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 border-t border-white/[0.08]">
+            <!-- Ringkasan Pemasukan, Pengeluaran & Jumlah Mutasi -->
+            <div class="grid grid-cols-3 gap-2 pt-2.5 border-t border-white/[0.08]">
+              <div class="p-2.5 rounded-2xl bg-obsidian/75 border border-emeraldLux/20 min-w-0">
+                <span class="text-[9px] font-medium text-emerald-300/90 block truncate">Masuk</span>
+                <p id="txSummaryIncome" class="text-[11px] font-bold text-emerald-300 tabular-nums mt-0.5 truncate">Rp 0</p>
+              </div>
+              <div class="p-2.5 rounded-2xl bg-obsidian/75 border border-roseLux/20 min-w-0">
+                <span class="text-[9px] font-medium text-rose-300/90 block truncate">Keluar</span>
+                <p id="txSummaryExpense" class="text-[11px] font-bold text-rose-300 tabular-nums mt-0.5 truncate">Rp 0</p>
+              </div>
+              <div class="p-2.5 rounded-2xl bg-obsidian/75 border border-champagne/20 min-w-0">
+                <span class="text-[9px] font-medium text-champagne/90 block truncate">Total Catatan</span>
+                <p id="txSummaryCount" class="text-[11px] font-bold text-white tabular-nums mt-0.5 truncate">0 Mutasi</p>
+              </div>
+            </div>
+
+            <!-- Pencarian & Filter Dompet -->
+            <div class="grid grid-cols-[1fr_auto] gap-2">
+              <div class="relative min-w-0">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                <input
+                  id="txSearchInput"
+                  type="text"
+                  oninput="handleTxSearchInput(this.value)"
+                  placeholder="Cari keterangan atau kategori..."
+                  class="w-full pl-8 pr-3 py-2 rounded-xl bg-obsidian/80 border border-white/10 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-champagne/60 transition"
+                />
+              </div>
+              <select
+                id="txWalletFilterSelect"
+                onchange="handleTxWalletFilterChange(this.value)"
+                aria-label="Filter Dompet Mutasi"
+                class="px-2.5 py-2 rounded-xl bg-obsidian/80 border border-white/10 text-[11px] text-slate-200 focus:outline-none focus:border-champagne/60 max-w-[125px]"
+              >
+                <option value="all">Semua Akun</option>
+              </select>
+            </div>
+
+            <!-- Filter Jenis Mutasi -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
               <button onclick="setTxFilter('all')" data-tx-filter="all" class="filter-smooth px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-champagne/20 text-champagne border border-champagne/40 shrink-0">Semua</button>
               <button onclick="setTxFilter('income')" data-tx-filter="income" class="filter-smooth px-3 py-1.5 rounded-xl text-[11px] font-medium bg-obsidian/70 text-slate-300 border border-white/10 shrink-0">Pemasukan</button>
               <button onclick="setTxFilter('expense')" data-tx-filter="expense" class="filter-smooth px-3 py-1.5 rounded-xl text-[11px] font-medium bg-obsidian/70 text-slate-300 border border-white/10 shrink-0">Pengeluaran</button>
@@ -1006,7 +1044,7 @@
             </div>
           </div>
 
-          <div id="transactionsListContainer" class="space-y-2.5"></div>
+          <div id="transactionsListContainer" class="space-y-3"></div>
         </section>
 
         <!-- ==================== TAB 4: MANAJEMEN PIUTANG ==================== -->
@@ -1344,7 +1382,7 @@
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">Nominal (Rp)</label>
-            <input id="txAmountField" type="number" min="1" step="100" required class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian/90 border border-white/10 text-xs text-white focus:outline-none focus:border-champagne" />
+            <input id="txAmountField" type="text" inputmode="numeric" required placeholder="Rp 0" oninput="handleRupiahInput(this)" class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian/90 border border-white/10 text-xs text-white tabular-nums focus:outline-none focus:border-champagne" />
           </div>
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">Tanggal</label>
@@ -1519,6 +1557,8 @@
     let state = loadPflState();
     let activeTab = 'dashboard';
     let activeTxFilter = 'all';
+    let activeTxWalletFilter = 'all';
+    let txSearchQuery = '';
     let allocationChart = null;
 
     function loadPflState() {
@@ -2253,6 +2293,19 @@
       const sorted = [...state.transactions].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       const walletMap = Object.fromEntries(state.wallets.map((w) => [w.id, w.name]));
 
+      // Sync wallet filter dropdown options while keeping active selection
+      const walletFilterEl = document.getElementById('txWalletFilterSelect');
+      if (walletFilterEl) {
+        const walletIds = new Set(state.wallets.map((w) => w.id));
+        if (activeTxWalletFilter !== 'all' && !walletIds.has(activeTxWalletFilter)) {
+          activeTxWalletFilter = 'all';
+        }
+        walletFilterEl.innerHTML =
+          `<option value="all">Semua Akun</option>` +
+          state.wallets.map((w) => `<option value="${esc(w.id)}">${esc(w.name)}</option>`).join('');
+        walletFilterEl.value = activeTxWalletFilter;
+      }
+
       const buildRow = (tx, deletable) => {
         const isIncome = tx.type === 'income';
         const isTransfer = tx.type === 'transfer';
@@ -2304,56 +2357,130 @@
       netEl.textContent = `${net >= 0 ? '+' : ''}${formatRupiah(net)}`;
       netEl.className = `text-2xl font-bold tabular-nums mt-1 tracking-tight ${net >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
 
-      const filtered = activeTxFilter === 'all' ? sorted : sorted.filter((t) => t.type === activeTxFilter);
+      const summaryIncEl = document.getElementById('txSummaryIncome');
+      const summaryExpEl = document.getElementById('txSummaryExpense');
+      const summaryCntEl = document.getElementById('txSummaryCount');
+      if (summaryIncEl) summaryIncEl.textContent = formatShortRupiah(m.totalIncome);
+      if (summaryExpEl) summaryExpEl.textContent = formatShortRupiah(m.totalExpense);
+
+      const q = txSearchQuery.trim().toLowerCase();
+      const filtered = sorted.filter((t) => {
+        const matchType = activeTxFilter === 'all' || t.type === activeTxFilter;
+        const matchWallet =
+          activeTxWalletFilter === 'all' ||
+          t.walletId === activeTxWalletFilter ||
+          (t.type === 'transfer' && t.targetWalletId === activeTxWalletFilter);
+        const matchSearch =
+          !q ||
+          String(t.title || '').toLowerCase().includes(q) ||
+          String(t.category || '').toLowerCase().includes(q) ||
+          String(walletMap[t.walletId] || '').toLowerCase().includes(q);
+        return matchType && matchWallet && matchSearch;
+      });
+
+      if (summaryCntEl) {
+        summaryCntEl.textContent = `${filtered.length} Mutasi`;
+      }
+
       const listBox = document.getElementById('transactionsListContainer');
-      listBox.innerHTML = filtered.length
-        ? filtered.map((t) => buildRow(t, true)).join('')
-        : `<div class="glass-card rounded-2xl p-5 text-center text-xs text-slate-400">Tidak ada mutasi pada kategori ini.</div>`;
+      if (!filtered.length) {
+        listBox.innerHTML = `<div class="glass-card rounded-2xl p-5 text-center text-xs text-slate-400">Belum ada mutasi yang sesuai dengan filter.</div>`;
+        return;
+      }
+
+      // Group transactions by date for cleaner ledger readability
+      const groupedByDate = [];
+      const dateIndex = new Map();
+      filtered.forEach((tx) => {
+        const dateKey = tx.date || 'Tanpa Tanggal';
+        if (!dateIndex.has(dateKey)) {
+          const entry = { dateKey, items: [] };
+          dateIndex.set(dateKey, entry);
+          groupedByDate.push(entry);
+        }
+        dateIndex.get(dateKey).items.push(tx);
+      });
+
+      listBox.innerHTML = groupedByDate
+        .map(
+          (group) => `
+          <div class="glass-card rounded-2xl p-3.5 border border-white/[0.08] space-y-2">
+            <div class="flex items-center justify-between gap-2 px-0.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-champagne/90">${esc(group.dateKey)}</span>
+              <span class="text-[10px] text-slate-400 tabular-nums">${group.items.length} catatan</span>
+            </div>
+            <div class="space-y-2">
+              ${group.items.map((t) => buildRow(t, true)).join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('');
     }
 
+    // Render Manajemen Piutang list & total remaining receivables
     function renderReceivablesPage(m) {
-      document.getElementById('receivablesPageTotal').textContent = formatRupiah(m.totalReceivables);
-      const box = document.getElementById('receivablesListContainer');
+      const totalEl = document.getElementById('receivablesPageTotal');
+      if (totalEl) {
+        totalEl.textContent = formatRupiah(m.totalReceivables);
+      }
 
-      if (state.receivables.length === 0) {
+      const box = document.getElementById('receivablesListContainer');
+      if (!box) return;
+
+      if (!Array.isArray(state.receivables) || state.receivables.length === 0) {
         box.innerHTML = `<div class="glass-card rounded-2xl p-5 text-center text-xs text-slate-400">Belum ada catatan piutang.</div>`;
         return;
       }
 
       box.innerHTML = state.receivables
         .map((r) => {
-          const rem = Number(r.remainingAmount) || 0;
-          const isPaid = rem <= 0;
+          const totalAmt = Math.max(0, Number(r.totalAmount) || 0);
+          const remAmt = Math.max(0, Number(r.remainingAmount) || 0);
+          const paidAmt = Math.max(0, totalAmt - remAmt);
+          const progressPct = totalAmt > 0 ? Math.min(100, Math.round((paidAmt / totalAmt) * 100)) : 100;
+          const isSettled = remAmt <= 0;
 
           return `
             <div class="glass-card rounded-2xl p-4 border border-white/[0.08] space-y-2.5">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <h4 class="text-xs font-semibold text-white truncate">${esc(r.debtor)}</h4>
                     <span class="px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                      isPaid
+                      isSettled
                         ? 'bg-emeraldLux/15 text-emerald-300 border border-emeraldLux/30'
                         : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                    }">${isPaid ? 'Lunas' : 'Belum Lunas'}</span>
+                    }">${isSettled ? 'Lunas' : 'Belum Lunas'}</span>
+                    <span class="text-[10px] text-slate-400 tabular-nums">Jatuh tempo: ${esc(r.dueDate || '-')}</span>
                   </div>
-                  <p class="text-[11px] text-slate-400 mt-0.5">${esc(r.note || 'Tanpa catatan')}</p>
-                  <p class="text-[10px] text-slate-500 mt-0.5">Jatuh tempo: ${esc(r.dueDate)} • Awal: ${formatRupiah(r.totalAmount)}</p>
+                  <h4 class="text-xs font-semibold text-white mt-1.5 truncate">${esc(r.debtor)}</h4>
+                  <p class="text-[10px] text-slate-400 truncate mt-0.5">${esc(r.note || 'Tanpa catatan tambahan')}</p>
                 </div>
-                <p class="text-sm font-bold ${isPaid ? 'text-slate-500 line-through' : 'text-amber-300'} tabular-nums shrink-0">${formatRupiah(rem)}</p>
+                <div class="text-right shrink-0">
+                  <span class="text-[9px] text-slate-400 block">Sisa Tagihan</span>
+                  <p class="text-sm font-bold ${isSettled ? 'text-emerald-300' : 'text-champagne'} tabular-nums">${formatRupiah(remAmt)}</p>
+                  <span class="text-[10px] text-slate-500 tabular-nums">dari ${formatRupiah(totalAmt)}</span>
+                </div>
               </div>
-              <div class="flex justify-end gap-2 pt-2 border-t border-white/[0.07]">
-                ${
-                  !isPaid
-                    ? `<button onclick="openSettleReceivableModal('${r.id}')" class="px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-emeraldLux/15 hover:bg-emeraldLux/25 text-emerald-300 border border-emeraldLux/35 inline-flex items-center gap-1">
-                        <i data-lucide="hand-coins" class="w-3.5 h-3.5"></i>
-                        <span>Terima Cicilan / Lunas</span>
-                      </button>`
-                    : ''
-                }
-                <button onclick="deleteReceivableItem('${r.id}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25">
-                  Hapus
-                </button>
+
+              <div class="w-full h-1.5 rounded-full bg-obsidian/90 overflow-hidden border border-white/[0.06]">
+                <div class="h-full rounded-full ${isSettled ? 'bg-emerald-400' : 'bg-gradient-to-r from-champagne to-amber-400'} transition-all duration-300" style="width: ${progressPct}%"></div>
+              </div>
+
+              <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.07]">
+                <span class="text-[10px] text-slate-400 tabular-nums">Terbayar: ${formatRupiah(paidAmt)} (${progressPct}%)</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  ${
+                    !isSettled
+                      ? `<button onclick="openSettleReceivableModal('${r.id}')" class="px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-emeraldLux/15 hover:bg-emeraldLux/25 text-emerald-300 border border-emeraldLux/30">
+                          Terima Dana
+                        </button>`
+                      : ''
+                  }
+                  <button onclick="deleteReceivableItem('${r.id}')" class="px-2.5 py-1 rounded-xl text-[11px] font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25">
+                    Hapus
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -2601,7 +2728,7 @@
 
     function openTransactionModal() {
       const opts = state.wallets
-        .map((w) => `<option value="${w.id}">${esc(w.name)} (${formatShortRupiah(w.balance)})</option>`)
+        .map((w) => `<option value="${w.id}">${esc(w.name)}</option>`)
         .join('');
       document.getElementById('txWalletField').innerHTML = opts;
       document.getElementById('txTargetWalletField').innerHTML = opts;
@@ -2610,7 +2737,7 @@
       document.getElementById('txTypeField').value = 'expense';
       toggleTransferTargetField();
       document.getElementById('txTitleField').value = '';
-      document.getElementById('txAmountField').value = '';
+      formatRupiahInputField(document.getElementById('txAmountField'), 0);
       document.getElementById('txCategoryField').value = '';
       document.getElementById('txDateField').value = new Date().toISOString().slice(0, 10);
       openModal('transactionModal');
@@ -2620,7 +2747,11 @@
       e.preventDefault();
       const type = document.getElementById('txTypeField').value;
       const title = document.getElementById('txTitleField').value.trim();
-      const amount = Math.max(1, Number(document.getElementById('txAmountField').value) || 0);
+      const amount = parseRupiahInput(document.getElementById('txAmountField').value);
+      if (amount < 1) {
+        showToast('Nominal transaksi minimal Rp 1.', 'error');
+        return;
+      }
       const date = document.getElementById('txDateField').value;
       const walletId = document.getElementById('txWalletField').value;
       const targetWalletId = document.getElementById('txTargetWalletField').value;
@@ -2688,6 +2819,18 @@
           ? 'filter-smooth px-3 py-1.5 rounded-xl text-[11px] font-semibold bg-champagne/20 text-champagne border border-champagne/40 shrink-0'
           : 'filter-smooth px-3 py-1.5 rounded-xl text-[11px] font-medium bg-obsidian/70 text-slate-300 border border-white/10 shrink-0';
       });
+      renderTransactions(computeMetrics());
+      refreshLucide();
+    }
+
+    function handleTxSearchInput(val) {
+      txSearchQuery = val || '';
+      renderTransactions(computeMetrics());
+      refreshLucide();
+    }
+
+    function handleTxWalletFilterChange(walletId) {
+      activeTxWalletFilter = walletId || 'all';
       renderTransactions(computeMetrics());
       refreshLucide();
     }
