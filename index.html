@@ -766,10 +766,6 @@
                 <p id="dashboardOwnerName" class="text-[15px] font-semibold text-white tracking-tight truncate mt-0.5">Khairul Rizal Nugraha</p>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="openModal('profileModal')" class="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white/[0.05] hover:bg-champagne/15 text-slate-200 hover:text-champagne border border-white/10 transition inline-flex items-center gap-1">
-                  <i data-lucide="pencil-line" class="w-2.5 h-2.5"></i>
-                  <span>Edit</span>
-                </button>
                 <span id="dashboardStatusBadge" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border bg-gradient-to-r from-emeraldLux/20 to-emeraldLux/10 text-emerald-300 border-emeraldLux/40 shrink-0">
                   <i data-lucide="sparkles" class="w-3 h-3"></i>
                   <span>Active</span>
@@ -779,8 +775,15 @@
 
             <div class="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3.5 w-full relative z-10">
               <div class="relative w-[5.5rem] h-[5.5rem] shrink-0">
-                <span id="dashboardAvatarSlot" class="w-full h-full rounded-2xl overflow-hidden bg-gradient-to-br from-champagne/25 to-goldDark/15 border border-champagne/50 shadow-goldGlow flex items-center justify-center text-xl font-bold text-champagne">KR</span>
-                <span id="dashboardStatusDot" class="w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-midnight absolute -bottom-0.5 -right-0.5 shadow-[0_0_10px_rgba(52,211,153,0.75)]" title="Status Profil"></span>
+                <button type="button" onclick="openProfilePhotoModal()" title="Ubah & Paskan Foto Profil" aria-label="Ubah & Paskan Foto Profil" class="group relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-br from-champagne/25 to-goldDark/15 border border-champagne/50 shadow-goldGlow flex items-center justify-center text-xl font-bold text-champagne focus:outline-none">
+                  <span id="dashboardAvatarSlot" class="w-full h-full flex items-center justify-center">KR</span>
+                  <span class="absolute inset-0 bg-obsidian/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-champagne">
+                    <i data-lucide="camera" class="w-5 h-5"></i>
+                  </span>
+                </button>
+                <button type="button" onclick="openProfilePhotoModal()" title="Atur Foto Profil" aria-label="Atur Foto Profil" class="w-6 h-6 rounded-full bg-surface border border-champagne/50 text-champagne shadow-md flex items-center justify-center absolute -bottom-1 -right-1 hover:bg-champagne hover:text-obsidian transition">
+                  <i data-lucide="camera" class="w-3 h-3"></i>
+                </button>
               </div>
 
               <div class="grid grid-cols-1 gap-1.5 text-[11px] text-slate-200 min-w-0">
@@ -1111,6 +1114,26 @@
       </div>
 
       <form onsubmit="saveProfileSettings(event)" class="space-y-3">
+        <!-- Photo Preview & Action Row -->
+        <div class="p-3 rounded-2xl bg-obsidian/80 border border-white/[0.08] flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div id="profileModalAvatarPreview" class="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-champagne/25 to-goldDark/15 border border-champagne/40 flex items-center justify-center text-sm font-bold text-champagne shrink-0">KR</div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-white truncate">Foto Profil Pemilik</p>
+              <p class="text-[10px] text-slate-400 truncate">Unggah & paskan posisi foto</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="openProfilePhotoModal()" class="px-3 py-2 rounded-xl text-[11px] font-semibold bg-champagne/15 hover:bg-champagne/25 text-champagne border border-champagne/35 inline-flex items-center gap-1.5">
+              <i data-lucide="crop" class="w-3.5 h-3.5"></i>
+              <span>Atur Foto</span>
+            </button>
+            <button type="button" id="removeProfilePhotoBtn" onclick="removeProfilePhoto()" class="hidden p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/25" title="Hapus Foto Profil">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
         <div>
           <label class="block text-[11px] font-medium text-slate-300 mb-1">Nama Lengkap</label>
           <input id="inputOwnerName" type="text" required class="w-full px-3.5 py-2.5 rounded-xl bg-obsidian/90 border border-white/10 text-xs text-white focus:outline-none focus:border-champagne" />
@@ -1160,6 +1183,92 @@
           <span>Reset Default</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- 1B. Profile Photo Upload & Crop/Fit Modal -->
+  <div id="profilePhotoModal" onclick="handleBackdropClick(event, 'profilePhotoModal')" class="modal-enter fixed inset-0 z-[85] hidden items-end sm:items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+    <div class="glass-card w-full max-w-[400px] rounded-3xl p-5 border border-champagne/35 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div>
+          <span class="eyebrow-gold block">Kustomisasi Avatar</span>
+          <h3 class="text-sm font-semibold text-white">Unggah & Paskan Foto Profil</h3>
+        </div>
+        <button type="button" onclick="closeModal('profilePhotoModal')" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <input id="profilePhotoFileInput" type="file" accept="image/*" onchange="handleProfilePhotoFileSelect(event)" class="hidden" />
+
+      <!-- Interactive Crop & Pan Stage -->
+      <div class="flex flex-col items-center gap-2.5">
+        <div
+          id="cropStage"
+          class="relative w-56 h-56 rounded-3xl overflow-hidden bg-obsidian border-2 border-champagne/50 shadow-goldGlow cursor-grab active:cursor-grabbing flex items-center justify-center select-none"
+        >
+          <img id="cropPreviewImg" alt="Pratinjau Foto Profil" draggable="false" class="hidden absolute max-w-none pointer-events-none select-none" />
+          <div id="cropEmptyPlaceholder" onclick="document.getElementById('profilePhotoFileInput').click()" class="cursor-pointer flex flex-col items-center justify-center text-center p-4 gap-2 text-slate-400 hover:text-champagne transition">
+            <div class="w-12 h-12 rounded-2xl bg-champagne/15 border border-champagne/35 flex items-center justify-center text-champagne">
+              <i data-lucide="image-plus" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-medium text-slate-200">Ketuk untuk pilih foto</span>
+            <span class="text-[10px] text-slate-400">JPG, PNG, atau WEBP</span>
+          </div>
+          <!-- Subtle Alignment Frame Guide -->
+          <div class="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/20"></div>
+          <div class="pointer-events-none absolute inset-x-0 top-1/3 border-t border-white/10"></div>
+          <div class="pointer-events-none absolute inset-x-0 top-2/3 border-t border-white/10"></div>
+          <div class="pointer-events-none absolute inset-y-0 left-1/3 border-l border-white/10"></div>
+          <div class="pointer-events-none absolute inset-y-0 left-2/3 border-l border-white/10"></div>
+        </div>
+        <p class="text-[10px] text-slate-400 text-center">Geser foto di dalam kotak untuk memposisikan wajah agar pas</p>
+      </div>
+
+      <!-- Zoom & Reset Controls -->
+      <div class="p-3 rounded-2xl bg-obsidian/85 border border-white/[0.08] space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium text-slate-300 inline-flex items-center gap-1.5">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-champagne"></i>
+            <span>Perbesar / Perkecil</span>
+          </span>
+          <span id="cropZoomValueLabel" class="text-[11px] font-semibold text-champagne tabular-nums">100%</span>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button type="button" onclick="adjustCropZoom(-0.1)" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center shrink-0" aria-label="Perkecil">
+            <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+          </button>
+          <input
+            id="cropZoomSlider"
+            type="range"
+            min="1"
+            max="3"
+            step="0.02"
+            value="1"
+            oninput="handleCropZoomSlider(this.value)"
+            class="flex-1 accent-[#E5C17B] cursor-pointer"
+          />
+          <button type="button" onclick="adjustCropZoom(0.1)" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center shrink-0" aria-label="Perbesar">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <button type="button" onclick="document.getElementById('profilePhotoFileInput').click()" class="py-2.5 px-3 rounded-xl text-xs font-semibold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border border-white/15 inline-flex items-center justify-center gap-1.5">
+          <i data-lucide="upload" class="w-3.5 h-3.5 text-champagne"></i>
+          <span>Pilih Foto</span>
+        </button>
+        <button type="button" onclick="resetCropTransform()" class="py-2.5 px-3 rounded-xl text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/10 inline-flex items-center justify-center gap-1.5">
+          <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Reset Posisi</span>
+        </button>
+      </div>
+
+      <button type="button" onclick="saveCroppedProfilePhoto()" class="w-full py-3 rounded-xl text-xs font-semibold bg-gradient-to-r from-champagne via-[#e7c582] to-[#c79a48] text-obsidian shadow-goldGlow hover:brightness-105 transition">
+        Simpan Foto Profil
+      </button>
     </div>
   </div>
 
@@ -1393,6 +1502,7 @@
         education: 'S1 Sistem Informasi',
         motto: 'Disiplin arus kas, bebas finansial',
         status: 'Active',
+        avatarDataUrl: '',
       },
       wallets: [
         { id: 'w-cash', name: 'Saldo Cash', category: 'cash', subtitle: 'Dompet Fisik Harian', balance: 0 },
@@ -1720,8 +1830,22 @@
         .filter(Boolean)
         .slice(0, 2)
         .map((w) => w[0].toUpperCase())
-        .join('');
-      document.getElementById('dashboardAvatarSlot').textContent = initials || 'KR';
+        .join('') || 'KR';
+
+      const avatarSlot = document.getElementById('dashboardAvatarSlot');
+      const modalPreview = document.getElementById('profileModalAvatarPreview');
+      const removeBtn = document.getElementById('removeProfilePhotoBtn');
+
+      if (p.avatarDataUrl) {
+        const imgMarkup = `<img src="${esc(p.avatarDataUrl)}" alt="Foto Profil ${esc(p.name)}" class="w-full h-full object-cover" />`;
+        if (avatarSlot) avatarSlot.innerHTML = imgMarkup;
+        if (modalPreview) modalPreview.innerHTML = imgMarkup;
+        if (removeBtn) removeBtn.classList.remove('hidden');
+      } else {
+        if (avatarSlot) avatarSlot.textContent = initials;
+        if (modalPreview) modalPreview.textContent = initials;
+        if (removeBtn) removeBtn.classList.add('hidden');
+      }
 
       const badge = document.getElementById('dashboardStatusBadge');
       badge.querySelector('span').textContent = p.status || 'Active';
@@ -1730,6 +1854,236 @@
       if (hint) {
         hint.textContent = 'Masukkan password untuk membuka data keuangan.';
       }
+    }
+
+    // =====================================================================
+    // PROFILE PHOTO UPLOAD, PAN & ZOOM CROPPER
+    // =====================================================================
+    const cropState = {
+      img: null,
+      naturalW: 0,
+      naturalH: 0,
+      baseScale: 1,
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      dragging: false,
+      startX: 0,
+      startY: 0,
+      startOffsetX: 0,
+      startOffsetY: 0,
+    };
+
+    function openProfilePhotoModal() {
+      const stage = document.getElementById('cropStage');
+      const previewImg = document.getElementById('cropPreviewImg');
+      const placeholder = document.getElementById('cropEmptyPlaceholder');
+
+      if (state.profile.avatarDataUrl) {
+        loadCropSourceImage(state.profile.avatarDataUrl);
+      } else {
+        cropState.img = null;
+        if (previewImg) {
+          previewImg.src = '';
+          previewImg.classList.add('hidden');
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        document.getElementById('cropZoomSlider').value = '1';
+        document.getElementById('cropZoomValueLabel').textContent = '100%';
+      }
+
+      openModal('profilePhotoModal');
+      if (stage && cropState.img) {
+        requestAnimationFrame(() => updateCropPreviewTransform());
+      }
+    }
+
+    function handleProfilePhotoFileSelect(e) {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast('Silakan pilih file gambar yang valid.', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (typeof ev.target?.result === 'string') {
+          loadCropSourceImage(ev.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    function loadCropSourceImage(src) {
+      const img = new Image();
+      img.onload = () => {
+        cropState.img = img;
+        cropState.naturalW = img.naturalWidth || img.width;
+        cropState.naturalH = img.naturalHeight || img.height;
+        cropState.zoom = 1;
+        cropState.offsetX = 0;
+        cropState.offsetY = 0;
+
+        const previewImg = document.getElementById('cropPreviewImg');
+        const placeholder = document.getElementById('cropEmptyPlaceholder');
+        previewImg.src = src;
+        previewImg.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+
+        document.getElementById('cropZoomSlider').value = '1';
+        document.getElementById('cropZoomValueLabel').textContent = '100%';
+        updateCropPreviewTransform();
+      };
+      img.src = src;
+    }
+
+    function clampCropOffsets() {
+      const stage = document.getElementById('cropStage');
+      if (!stage || !cropState.img) return;
+      const stageSize = stage.clientWidth || 224;
+      cropState.baseScale = Math.max(stageSize / cropState.naturalW, stageSize / cropState.naturalH);
+      const scale = cropState.baseScale * cropState.zoom;
+      const drawW = cropState.naturalW * scale;
+      const drawH = cropState.naturalH * scale;
+      const maxX = Math.max(0, (drawW - stageSize) / 2);
+      const maxY = Math.max(0, (drawH - stageSize) / 2);
+
+      cropState.offsetX = Math.min(maxX, Math.max(-maxX, cropState.offsetX));
+      cropState.offsetY = Math.min(maxY, Math.max(-maxY, cropState.offsetY));
+    }
+
+    function updateCropPreviewTransform() {
+      const stage = document.getElementById('cropStage');
+      const previewImg = document.getElementById('cropPreviewImg');
+      if (!stage || !previewImg || !cropState.img) return;
+
+      const stageSize = stage.clientWidth || 224;
+      clampCropOffsets();
+      const scale = cropState.baseScale * cropState.zoom;
+      const drawW = cropState.naturalW * scale;
+      const drawH = cropState.naturalH * scale;
+      const left = (stageSize - drawW) / 2 + cropState.offsetX;
+      const top = (stageSize - drawH) / 2 + cropState.offsetY;
+
+      previewImg.style.width = `${drawW}px`;
+      previewImg.style.height = `${drawH}px`;
+      previewImg.style.left = `${left}px`;
+      previewImg.style.top = `${top}px`;
+    }
+
+    function handleCropZoomSlider(val) {
+      cropState.zoom = Math.min(3, Math.max(1, Number(val) || 1));
+      document.getElementById('cropZoomValueLabel').textContent = `${Math.round(cropState.zoom * 100)}%`;
+      updateCropPreviewTransform();
+    }
+
+    function adjustCropZoom(delta) {
+      const next = Math.min(3, Math.max(1, Number((cropState.zoom + delta).toFixed(2))));
+      document.getElementById('cropZoomSlider').value = String(next);
+      handleCropZoomSlider(next);
+    }
+
+    function resetCropTransform() {
+      cropState.zoom = 1;
+      cropState.offsetX = 0;
+      cropState.offsetY = 0;
+      document.getElementById('cropZoomSlider').value = '1';
+      document.getElementById('cropZoomValueLabel').textContent = '100%';
+      updateCropPreviewTransform();
+    }
+
+    function saveCroppedProfilePhoto() {
+      if (!cropState.img) {
+        showToast('Pilih foto terlebih dahulu.', 'error');
+        return;
+      }
+      const stage = document.getElementById('cropStage');
+      const stageSize = stage?.clientWidth || 224;
+      clampCropOffsets();
+
+      const outputSize = 360;
+      const ratio = outputSize / stageSize;
+      const canvas = document.createElement('canvas');
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+      const ctx = canvas.getContext('2d');
+
+      const scale = cropState.baseScale * cropState.zoom;
+      const drawW = cropState.naturalW * scale * ratio;
+      const drawH = cropState.naturalH * scale * ratio;
+      const drawX = ((stageSize - cropState.naturalW * scale) / 2 + cropState.offsetX) * ratio;
+      const drawY = ((stageSize - cropState.naturalH * scale) / 2 + cropState.offsetY) * ratio;
+
+      ctx.fillStyle = '#0A0E17';
+      ctx.fillRect(0, 0, outputSize, outputSize);
+      ctx.drawImage(cropState.img, drawX, drawY, drawW, drawH);
+
+      state.profile.avatarDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+      persistPflState();
+      renderProfileSection();
+      closeModal('profilePhotoModal');
+      showToast('Foto profil berhasil disimpan.');
+    }
+
+    function removeProfilePhoto() {
+      state.profile.avatarDataUrl = '';
+      persistPflState();
+      renderProfileSection();
+      showToast('Foto profil dihapus.');
+    }
+
+    function initCropStagePointerEvents() {
+      const stage = document.getElementById('cropStage');
+      if (!stage) return;
+
+      const onDown = (clientX, clientY) => {
+        if (!cropState.img) return;
+        cropState.dragging = true;
+        cropState.startX = clientX;
+        cropState.startY = clientY;
+        cropState.startOffsetX = cropState.offsetX;
+        cropState.startOffsetY = cropState.offsetY;
+      };
+
+      const onMove = (clientX, clientY) => {
+        if (!cropState.dragging || !cropState.img) return;
+        cropState.offsetX = cropState.startOffsetX + (clientX - cropState.startX);
+        cropState.offsetY = cropState.startOffsetY + (clientY - cropState.startY);
+        updateCropPreviewTransform();
+      };
+
+      const onUp = () => {
+        cropState.dragging = false;
+      };
+
+      stage.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        onDown(e.clientX, e.clientY);
+      });
+      window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+      window.addEventListener('mouseup', onUp);
+
+      stage.addEventListener(
+        'touchstart',
+        (e) => {
+          if (e.touches.length === 1) {
+            onDown(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        },
+        { passive: true }
+      );
+      stage.addEventListener(
+        'touchmove',
+        (e) => {
+          if (cropState.dragging && e.touches.length === 1) {
+            e.preventDefault();
+            onMove(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        },
+        { passive: false }
+      );
+      stage.addEventListener('touchend', onUp);
     }
 
     function renderDashboardCards(m) {
@@ -2524,6 +2878,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       detectStandaloneMode();
+      initCropStagePointerEvents();
       renderDashboardAll();
       initIosStandalonePrompt();
       nudgeSafariToolbarCollapse();
